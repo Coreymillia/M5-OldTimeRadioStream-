@@ -1,0 +1,12 @@
+{
+  "name": "M5RadioStream — WiFi Internet Radio",
+  "version": "1.0",
+  "description": "WiFi internet radio for M5Stack Core1 Basic. Streams 8 classic/OTR stations from ROKiT Radio Network. Retro 1940s skin. BtnA=Sound settings (Bass/Treble/Volume). BtnB=Cycle station. BtnC=Cycle volume (0-10, 0=mute). Hold BtnA on boot to re-enter WiFi setup. Based on winRadio by Volos Projects.",
+  "author": "CoreyMillia",
+  "category": "Media/Audio",
+  "file": "M5RadioStream-v1.0-MERGED.bin",
+  "bootloader": "0x1000",
+  "partition": "0x8000",
+  "app": "0x10000",
+  "chip": "esp32"
+}

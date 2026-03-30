@@ -111,7 +111,7 @@ bool  canDraw = false;
 int   rssi    = 0;
 
 int    chosen = 0;
-int    volume = 2;   // 1-5, maps to audio.setVolume(volume * 4)
+int    volume = 5;   // 0-10, maps to audio.setVolume(volume * 2)
 
 unsigned short grays[18];
 unsigned short gray;
@@ -182,7 +182,7 @@ void setup() {
         wifiMulti.run();
     }
 
-    audio.setVolume(volume * 4);
+    audio.setVolume(volume * 2);
     audio.connecttohost(stations[0].c_str());
 
     // Pin audio task to core 0 (alongside WiFi stack), high priority
@@ -326,8 +326,8 @@ void drawDynamic() {
     M5.Lcd.setTextColor(SW_AMBER, TFT_BLACK);
     M5.Lcd.drawString("BR:" + String(bitrate) + "k", 6, SW_INFO_Y);
     M5.Lcd.drawString("VOL:", 200, SW_INFO_Y);
-    for (int i = 0; i < 5; i++)
-        M5.Lcd.fillRect(227 + i * 11, SW_INFO_Y, 9, 7,
+    for (int i = 0; i < 10; i++)
+        M5.Lcd.fillRect(224 + i * 7, SW_INFO_Y, 5, 7,
                         i < volume ? SW_AMBER : SW_DGREY);
 
     M5.Lcd.endWrite();
@@ -348,7 +348,7 @@ void draw3() {
 // Shows Volume, Bass, Treble with a progress bar each.
 void drawSettings() {
     const char *labels[3]  = { "Volume", "Bass  ", "Treble" };
-    int   values[3]  = { volume * 4, settingBass, settingTreble };
+    int   values[3]  = { volume * 2, settingBass, settingTreble };
     int   mins[3]    = { 4, -6, -6 };
     int   maxs[3]    = { 20,  6,  6 };
 
@@ -413,10 +413,10 @@ void loop() {
         }
         if (M5.BtnC.wasPressed()) {
             if (settingSel == 0) {
-                // Volume: steps of 4 across 4-20 range
+                // Volume: steps of 1 across 0-10 range (0 = mute)
                 volume++;
-                if (volume > 5) volume = 1;
-                audio.setVolume(volume * 4);
+                if (volume > 10) volume = 0;
+                audio.setVolume(volume * 2);
             } else if (settingSel == 1) {
                 settingBass++;
                 if (settingBass > 6) settingBass = -6;
@@ -461,8 +461,8 @@ void loop() {
 
     if (M5.BtnC.wasPressed()) {
         volume++;
-        if (volume > 5) volume = 1;
-        audio.setVolume(volume * 4);
+        if (volume > 10) volume = 0;
+        audio.setVolume(volume * 2);
         canDraw = true;
     }
 
