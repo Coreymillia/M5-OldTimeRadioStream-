@@ -36,6 +36,32 @@
 #define SCREEN_W  320
 #define SCREEN_H  240
 
+// ─── Shortwave skin palette ───────────────────────────────────────────────────
+#define SW_AMBER    0xFAE0   // warm amber — labels, dividers, active accents
+#define SW_AMBER_D  0x7100   // dim amber — inactive elements
+#define SW_HDR_BG   0x1082   // dark charcoal — header background
+#define SW_BTN_BG   0x2126   // dark blue-grey — button fill
+#define SW_SLOT_BG  0x0841   // near-black — empty VU bar slots
+#define SW_GRN_DIM  0x0180   // very dim green — inactive RSSI bars
+#define SW_DGREY    0x2945   // dark grey — inactive volume dots
+
+// ─── Layout Y positions ───────────────────────────────────────────────────────
+#define SW_LINE1     24   // amber divider — bottom of header
+#define SW_DIAL_LN   44   // horizontal tuning-dial line
+#define SW_LINE2     66   // amber divider — bottom of dial zone
+#define SW_NAME_Y    72   // top of station-name text (font 4 = 26 px high)
+#define SW_LINE3    108   // amber divider — bottom of name zone
+#define SW_VU_BOT   162   // VU bars bottom Y (bars grow upward from here)
+#define SW_INFO_Y   166   // info-row text baseline
+#define SW_LINE4    178   // amber divider — bottom of VU + info
+#define SW_TCK_Y    182   // ticker sprite push Y
+#define SW_LINE5    201   // amber divider — bottom of ticker
+#define SW_BTN_Y    206   // button rect top Y
+
+// ─── Tuning-dial X geometry ───────────────────────────────────────────────────
+#define DIAL_X1      20   // left end of dial line
+#define DIAL_X2     300   // right end  (spacing = 280/7 = 40 px per station)
+
 #define ns 8
 // ROKiT Radio Network — OTR/classic streams, all 48 kbps MP3
 String stations[ns] = {
@@ -115,7 +141,7 @@ void setup() {
     sprite2.setColorDepth(16);
     sprite2.createSprite(310, 16);
     sprite2.setTextFont(2);
-    sprite2.setTextColor(grays[0], TFT_BLACK);
+    sprite2.setTextColor(SW_AMBER, TFT_BLACK);
 
     rdLoadSettings();
 
@@ -171,74 +197,56 @@ void setup() {
 // setupUI — draw all static (non-changing) UI elements once.
 // Call at startup and when returning from the settings screen.
 void setupUI() {
-    gray  = grays[16];
-    light = grays[12];
-
     M5.Lcd.startWrite();
+    M5.Lcd.fillScreen(TFT_BLACK);
 
-    // Background + panels
-    M5.Lcd.fillRect(0, 0, SCREEN_W, SCREEN_H, gray);
-    M5.Lcd.fillRect(4, 20, 205, 172, TFT_BLACK);
-    M5.Lcd.drawRect(4, 20, 205, 172, light);
-    M5.Lcd.fillRect(215, 20, 100, 60, TFT_BLACK);
-    M5.Lcd.drawRect(215, 20, 100, 60, light);
-    M5.Lcd.fillRect(215, 176, 100, 16, TFT_BLACK);
-    M5.Lcd.drawRect(215, 176, 100, 16, light);
-
-    // Volume track (yellow line — knob drawn in drawDynamic)
-    M5.Lcd.fillRoundRect(215, 140, 100, 3, 2, TFT_YELLOW);
-
-    // Song ticker panel
-    M5.Lcd.fillRect(4, 212, 312, 18, TFT_BLACK);
-    M5.Lcd.drawRect(4, 212, 312, 18, light);
-
-    // Divider bar between station list and right panel
-    M5.Lcd.fillRect(209, 20, 5, 172, grays[11]);
-    M5.Lcd.fillRect(209, 20, 5, 20,  grays[2]);
-    M5.Lcd.fillRect(211, 24, 1, 12,  grays[16]);
-
-    // Orange accent lines
-    M5.Lcd.fillRect(4,   7,  205, 3, TFT_ORANGE);
-    M5.Lcd.fillRect(245, 5,  45,  3, TFT_ORANGE);
-    M5.Lcd.fillRect(215, 194, 100, 1, TFT_ORANGE);
-    M5.Lcd.fillRect(245, 11, 45,  3, grays[6]);
-
-    // Outer border + bottom shadow
-    M5.Lcd.drawRect(0, 0, SCREEN_W - 1, SCREEN_H - 1, light);
-    M5.Lcd.fillRect(5, 234, 310, 2, grays[13]);
-
-    // Static labels
+    // ── Header bar ──────────────────────────────────────────────────────────
+    M5.Lcd.fillRect(0, 0, SCREEN_W, SW_LINE1, SW_HDR_BG);
     M5.Lcd.setTextFont(2);
-    M5.Lcd.setTextColor(grays[1], gray);
-    M5.Lcd.drawString(" STATIONS ", 60, 2);
-    M5.Lcd.drawString("WEB", 215, 2);
+    M5.Lcd.setTextColor(SW_AMBER, SW_HDR_BG);
+    M5.Lcd.drawString("M5 SHORTWAVE", 6, 4);
 
-    M5.Lcd.setTextColor(grays[0], gray);
-    M5.Lcd.drawString("INTERNET", 215, 86);
-    M5.Lcd.setTextColor(TFT_RED, gray);
-    M5.Lcd.drawString("RADIO", 215, 102);
+    // ── Five amber dividers ──────────────────────────────────────────────────
+    const int divs[] = { SW_LINE1, SW_LINE2, SW_LINE3, SW_LINE4, SW_LINE5 };
+    for (int i = 0; i < 5; i++)
+        M5.Lcd.drawFastHLine(0, divs[i], SCREEN_W, SW_AMBER);
 
-    M5.Lcd.setTextColor(grays[6], gray);
-    M5.Lcd.drawString("SONG PLAYING", 6, 200);
-    M5.Lcd.drawString("VOLUME", 215, 124);
-
-    M5.Lcd.setTextColor(grays[11], gray);
-    M5.Lcd.drawString("VOLOS 2026", 155, 200);
-
-    // WIFI stack text (decorative — status dots drawn in drawDynamic)
-    M5.Lcd.setTextColor(grays[10], TFT_BLACK);
-    M5.Lcd.drawString("W", 220, 24);
-    M5.Lcd.drawString("I", 220, 34);
-    M5.Lcd.drawString("F", 220, 44);
-    M5.Lcd.drawString("I", 220, 54);
-
-    // Button labels: SET / STA / VOL
-    M5.Lcd.setTextColor(grays[16], grays[5]);
-    const char *btnLabels[3] = {"SET", "STA", "VOL"};
-    for (int i = 0; i < 3; i++) {
-        M5.Lcd.fillRoundRect(215 + (i * 32), 152, 28, 18, 4, grays[5]);
-        M5.Lcd.drawString(btnLabels[i], 216 + (i * 32), 154);
+    // ── Tuning dial: line + tick marks + station numbers ─────────────────────
+    M5.Lcd.drawFastHLine(DIAL_X1, SW_DIAL_LN, DIAL_X2 - DIAL_X1 + 1, SW_AMBER_D);
+    int dialSpacing = (DIAL_X2 - DIAL_X1) / (ns - 1);
+    M5.Lcd.setTextFont(1);
+    M5.Lcd.setTextColor(SW_AMBER_D, TFT_BLACK);
+    for (int i = 0; i < ns; i++) {
+        int tx = DIAL_X1 + i * dialSpacing;
+        M5.Lcd.drawFastVLine(tx, 32, SW_DIAL_LN - 32, SW_AMBER_D);
+        char lbl[3];
+        snprintf(lbl, sizeof(lbl), "%d", i + 1);
+        M5.Lcd.drawString(lbl, tx - 3, 25);
     }
+
+    // ── VU empty bar slots (14 columns × 4 steps) ───────────────────────────
+    for (int i = 0; i < 14; i++) {
+        int bx = 10 + i * 21;
+        for (int j = 0; j < 4; j++)
+            M5.Lcd.fillRect(bx, SW_VU_BOT - 10 - j * 13, 19, 10, SW_SLOT_BG);
+    }
+
+    // ── Button row ───────────────────────────────────────────────────────────
+    const char *btnLbls[] = { "SET", "STA", "VOL" };
+    const int   btnCx[]   = {  53,   160,   267 };
+    M5.Lcd.setTextFont(2);
+    for (int i = 0; i < 3; i++) {
+        int bx = btnCx[i] - 30;
+        M5.Lcd.fillRoundRect(bx, SW_BTN_Y, 60, 24, 5, SW_BTN_BG);
+        M5.Lcd.drawRoundRect(bx, SW_BTN_Y, 60, 24, 5, SW_AMBER_D);
+        M5.Lcd.setTextColor(SW_AMBER, SW_BTN_BG);
+        M5.Lcd.drawCentreString(btnLbls[i], btnCx[i], SW_BTN_Y + 4, 2);
+    }
+
+    // ── Credit ───────────────────────────────────────────────────────────────
+    M5.Lcd.setTextFont(1);
+    M5.Lcd.setTextColor(SW_AMBER_D, TFT_BLACK);
+    M5.Lcd.drawCentreString("VOLOS / COPILOT SKIN 2026", 160, 231, 1);
 
     M5.Lcd.endWrite();
 }
@@ -249,48 +257,78 @@ void setupUI() {
 void drawDynamic() {
     M5.Lcd.startWrite();
 
-    // --- Station list (erase only the list area, then redraw) ---
-    M5.Lcd.fillRect(5, 21, 203, 170, TFT_BLACK);
+    // ── Header: erase dynamic zone ─────────────────────────────────────────
+    M5.Lcd.fillRect(120, 2, 198, 20, SW_HDR_BG);
+
+    // WiFi connection dot
+    M5.Lcd.fillCircle(127, 12, 4, connected ? TFT_GREEN : TFT_RED);
+
+    // RSSI signal bars (4 bars, heights 4/7/10/13 px, growing upward)
+    int sigBars = 0;
+    if (connected) {
+        if      (rssi > -55) sigBars = 4;
+        else if (rssi > -65) sigBars = 3;
+        else if (rssi > -75) sigBars = 2;
+        else                 sigBars = 1;
+    }
+    for (int i = 0; i < 4; i++) {
+        int bh = 4 + i * 3;
+        int bx = 135 + i * 8;
+        M5.Lcd.fillRect(bx, 22 - bh, 5, bh, (i < sigBars) ? TFT_GREEN : SW_GRN_DIM);
+    }
+
+    // Station counter "STA X/8"
     M5.Lcd.setTextFont(1);
-    for (int i = 0; i < ns; i++) {
-        M5.Lcd.setTextColor(i == chosen ? TFT_GREEN : TFT_DARKGREEN, TFT_BLACK);
-        M5.Lcd.drawString(stationNames[i], 10, 26 + (i * 19));
+    M5.Lcd.setTextColor(SW_AMBER_D, SW_HDR_BG);
+    char staCur[8];
+    snprintf(staCur, sizeof(staCur), "STA%d/%d", chosen + 1, ns);
+    M5.Lcd.drawString(staCur, 166, 8);
+
+    // Voltage
+    M5.Lcd.setTextColor(SW_AMBER, SW_HDR_BG);
+    M5.Lcd.drawString(String(voltage, 2) + "V", 218, 8);
+
+    // Battery icon
+    M5.Lcd.drawRect(253, 6, 20, 12, SW_AMBER);
+    M5.Lcd.fillRect(255, 8, 16, 8, TFT_BLACK);
+    M5.Lcd.fillRect(255, 8, constrain(batLevel, 0, 13), 8,
+                    batLevel > 4 ? TFT_GREEN : TFT_RED);
+    M5.Lcd.fillRect(273, 9, 2, 4, SW_AMBER);   // terminal nub
+
+    // ── Tuning needle ──────────────────────────────────────────────────────
+    M5.Lcd.fillRect(0, SW_DIAL_LN + 1, SCREEN_W, 14, TFT_BLACK);
+    int dialSpacing = (DIAL_X2 - DIAL_X1) / (ns - 1);
+    int nx = DIAL_X1 + chosen * dialSpacing;
+    M5.Lcd.fillTriangle(nx,     SW_DIAL_LN + 1,
+                        nx - 6, SW_DIAL_LN + 13,
+                        nx + 6, SW_DIAL_LN + 13, TFT_GREEN);
+
+    // ── Station name (font 4 = 26 px, centered) ────────────────────────────
+    M5.Lcd.fillRect(0, SW_LINE2 + 1, SCREEN_W, SW_LINE3 - SW_LINE2 - 1, TFT_BLACK);
+    M5.Lcd.setTextFont(4);
+    M5.Lcd.setTextColor(TFT_GREEN, TFT_BLACK);
+    M5.Lcd.drawCentreString(stationNames[chosen], 160, SW_NAME_Y, 4);
+
+    // ── VU bars (14 columns × 4 steps, colour-graded bottom→top) ──────────
+    static const uint16_t vuOn[4] = { 0x07E0, 0x47E0, SW_AMBER, TFT_ORANGE };
+    for (int i = 0; i < 14; i++) {
+        g[i] = connected ? random(1, 5) : 0;
+        int bx = 10 + i * 21;
+        for (int j = 0; j < 4; j++) {
+            int by = SW_VU_BOT - 10 - j * 13;
+            M5.Lcd.fillRect(bx, by, 19, 10, j < g[i] ? vuOn[j] : SW_SLOT_BG);
+        }
     }
 
-    // --- VU meter bars (erase then redraw animated bars) ---
-    M5.Lcd.fillRect(227, 24, 60, 48, TFT_BLACK);
-    for (int i = 0; i < 12; i++) {
-        if (connected) g[i] = random(1, 5);
-        for (int j = 0; j < g[i]; j++)
-            M5.Lcd.fillRect(227 + (i * 5), 71 - j * 4, 4, 3, grays[4]);
-    }
-
-    // --- WiFi status dots ---
-    M5.Lcd.fillRect(229, 24, 5, 10, connected ? TFT_GREEN : TFT_RED);
-    M5.Lcd.fillRect(229, 37, 5, 10, connected ? TFT_GREEN : TFT_DARKGREEN);
-
-    // --- RSSI + voltage (erase right portion of info panel) ---
-    M5.Lcd.setTextFont(2);
-    M5.Lcd.fillRect(238, 24, 75, 28, TFT_BLACK);
-    M5.Lcd.setTextColor(TFT_GREEN, TFT_BLACK);
-    M5.Lcd.drawString("RSSI:" + String(rssi), 238, 24);
-    M5.Lcd.drawString(String(voltage, 2) + "V", 238, 37);
-
-    // --- Battery icon ---
-    M5.Lcd.drawRect(265, 36, 17, 10, TFT_GREEN);
-    M5.Lcd.fillRect(267, 38, 13, 6, TFT_BLACK);
-    M5.Lcd.fillRect(267, 38, batLevel, 6, TFT_GREEN);
-    M5.Lcd.fillRect(282, 39, 2, 4, TFT_GREEN);
-
-    // --- Bitrate ---
-    M5.Lcd.fillRect(216, 177, 98, 14, TFT_BLACK);
-    M5.Lcd.setTextColor(TFT_GREEN, TFT_BLACK);
-    M5.Lcd.drawString("BITRATE " + String(bitrate), 219, 180);
-
-    // --- Volume knob (erase knob track area, redraw knob position) ---
-    M5.Lcd.fillRect(215, 136, 100, 12, gray);
-    M5.Lcd.fillRoundRect(200 + (volume * 15), 137, 14, 8, 2, grays[2]);
-    M5.Lcd.fillRoundRect(203 + (volume * 15), 139, 8,  4, 2, grays[10]);
+    // ── Info row: bitrate + volume dots ────────────────────────────────────
+    M5.Lcd.fillRect(0, SW_INFO_Y - 1, SCREEN_W, 12, TFT_BLACK);
+    M5.Lcd.setTextFont(1);
+    M5.Lcd.setTextColor(SW_AMBER, TFT_BLACK);
+    M5.Lcd.drawString("BR:" + String(bitrate) + "k", 6, SW_INFO_Y);
+    M5.Lcd.drawString("VOL:", 200, SW_INFO_Y);
+    for (int i = 0; i < 5; i++)
+        M5.Lcd.fillRect(227 + i * 11, SW_INFO_Y, 9, 7,
+                        i < volume ? SW_AMBER : SW_DGREY);
 
     M5.Lcd.endWrite();
 
@@ -301,8 +339,8 @@ void draw3() {
     songposition--;
     if (songposition < -310) songposition = 310;
     sprite2.fillSprite(TFT_BLACK);
-    sprite2.drawString(songPlaying, songposition, 0);
-    sprite2.pushSprite(5, 213);
+    sprite2.drawString(">> " + songPlaying, songposition, 0);
+    sprite2.pushSprite(5, SW_TCK_Y);
 }
 
 // ---------------------------------------------------------------------------
